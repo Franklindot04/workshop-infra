@@ -34,3 +34,10 @@ Open `http://localhost:8000/docs` in a browser.
 ```bash
 PYTHONPATH=. pytest services/processor/tests
 ```
+## Configuration
+
+The service uses the following port precedence:
+
+1. `PROCESSOR_PORT`
+2. `PORT`
+3. `8000` by default

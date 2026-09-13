@@ -10,8 +10,12 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+def server_port() -> int:
+    port = os.getenv("PROCESSOR_PORT") or os.getenv("PORT") or "8000"
+    return int(port)
+
+
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.getenv("PORT", "8000"))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=server_port())
