@@ -14,10 +14,7 @@ import (
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	port := serverPort()
 
 	httpServer := &http.Server{
 		Addr:              ":" + port,
@@ -44,4 +41,14 @@ func main() {
 	if err := httpServer.Shutdown(shutdownContext); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func serverPort() string {
+	if port := os.Getenv("COLLECTOR_PORT"); port != "" {
+		return port
+	}
+	if port := os.Getenv("PORT"); port != "" {
+		return port
+	}
+	return "8080"
 }
