@@ -1,0 +1,22 @@
+services:
+  collector:
+    build:
+      context: .
+      dockerfile: services/collector/Dockerfile
+    environment:
+      COLLECTOR_PORT: ${COLLECTOR_PORT:-8080}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${COLLECTOR_PORT:-8080}:8080"
+
+  processor:
+    build:
+      context: .
+      dockerfile: services/processor/Dockerfile
+    environment:
+      PROCESSOR_PORT: ${PROCESSOR_PORT:-8000}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${PROCESSOR_PORT:-8000}:8000"
