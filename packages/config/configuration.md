@@ -1,45 +1,36 @@
-# Service Configuration Conventions
+# Service Configuration
 
-This document defines initial configuration conventions for workshop-infra services. It applies to both Go and Python services.
+Shared configuration conventions for workshop-infra services.
 
-## Environment variables
+## Environment variable naming
 
-- Use `UPPER_SNAKE_CASE` for all environment variable names.
-- Prefix service-specific variables with the service name, e.g. `COLLECTOR_PORT`, `PROCESSOR_PORT`.
-- Use `PORT` as a generic override when deploying in containers.
-- Read environment variables at startup; do not change behavior based on config files checked into source control.
+Service-specific configuration variables should use a clear service prefix:
 
-## Default ports
+- `COLLECTOR_PORT`
+- `PROCESSOR_PORT`
 
-- Collector (Go): `8080`
-- Processor (Python): `8000`
+Generic variables such as `PORT` may be supported as compatibility fallbacks where appropriate.
 
-Local development should use these defaults unless overridden by `PORT`.
+## Port precedence
 
-## Local development configuration
+Services should resolve their listening port in this order:
 
-- Use `.env` files for local overrides only; never commit `.env`.
-- Commit `.env.example` with placeholder values and documentation.
-- Validate required variables at service startup and fail fast if missing.
+1. Service-specific port variable.
+2. Generic `PORT` fallback.
+3. Documented service default.
 
-## Required versus optional settings
+The service-specific variable should be used in local Compose configuration and normal development workflows.
 
-- **Required**: Variables without which the service cannot start (e.g. `PORT` if not using a default).
-- **Optional**: Variables with sensible defaults or used only for optional features.
+## Local environment
 
-Document all required variables in each service's README.
+Use the root `.env.example` as the reference for local configuration.
+
+Local `.env` files may contain environment-specific values and must not be committed.
 
 ## Secrets
 
-- Never commit secrets to source control.
-- Store secrets in environment variables or a secrets manager.
-- Use `.env.example` to document required secret names without values.
-- Rotate secrets if they are ever exposed in logs or commits.
+Secrets must not be committed to the repository. Use environment variables or an appropriate secret-management mechanism for runtime secret values.
 
-## Naming conventions
+## Exceptions
 
-- Service name: lowercase, hyphen-separated (e.g. `collector`, `processor`).
-- Environment variable prefix: uppercase, same as service name (e.g. `COLLECTOR_`, `PROCESSOR_`).
-- Configuration keys in code: match environment variable names or use clear, consistent mappings.
-
-These conventions keep configuration consistent across Go and Python services and simplify future deployment and automation.
+A service may use different configuration conventions when required by its runtime or deployment environment. Such exceptions should be documented in the service README.
