@@ -15,6 +15,7 @@ services:
       context: .
       dockerfile: services/processor/Dockerfile
     environment:
+      COLLECTOR_URL: http://collector:8080
       PROCESSOR_PORT: ${PROCESSOR_PORT:-8000}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       LOG_LEVEL: ${LOG_LEVEL:-info}
