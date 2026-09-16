@@ -1,4 +1,5 @@
 import os
+import re
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -12,13 +13,14 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/collector/metrics", response_class=PlainTextResponse)
-def collector_metrics() -> str:
-    collector_url = os.getenv("COLLECTOR_URL", "http://localhost:8080").rstrip("/")
+def collector_url() -> str:
+    return os.getenv("COLLECTOR_URL", "http://localhost:8080").rstrip("/")
 
+
+def fetch_collector_metrics() -> str:
     try:
         response = httpx.get(
-            f"{collector_url}/metrics",
+            f"{collector_url()}/metrics",
             timeout=5.0,
             trust_env=False,
         )
@@ -30,6 +32,37 @@ def collector_metrics() -> str:
         ) from exc
 
     return response.text
+
+
+@app.get("/collector/metrics", response_class=PlainTextResponse)
+def collector_metrics() -> str:
+    return fetch_collector_metrics()
+
+
+def parse_collector_status(metrics: str) -> float:
+    match = re.search(
+        r"^workshop_collector_up(?:\{[^}]*\})?\s+([0-9]+(?:\.[0-9]+)?)\s*$",
+        metrics,
+        re.MULTILINE,
+    )
+
+    if match is None:
+        raise HTTPException(
+            status_code=502,
+            detail="Collector status metric is unavailable",
+        )
+
+    return float(match.group(1))
+
+
+@app.get("/collector/status")
+def collector_status() -> dict[str, float | str]:
+    value = parse_collector_status(fetch_collector_metrics())
+
+    return {
+        "collector": "up" if value == 1 else "down",
+        "value": value,
+    }
 
 
 def server_port() -> int:
