@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from services.processor.app import app, parse_collector_status, server_port
+from services.processor.app import app, collector_is_ready, parse_collector_status, server_port
 
 
 client = TestClient(app)
@@ -134,6 +134,45 @@ def test_collector_status_returns_bad_gateway() -> None:
         response = client.get("/collector/status")
 
     assert response.status_code == 502
+    assert response.json() == {
+        "detail": "Collector metrics are unavailable",
+    }
+
+def test_collector_is_ready() -> None:
+    with patch("services.processor.app.httpx.get") as mock_get:
+        mock_get.return_value.raise_for_status.return_value = None
+        mock_get.return_value.text = "workshop_collector_up 1\n"
+
+        assert collector_is_ready() is True
+
+
+def test_collector_is_not_ready() -> None:
+    with patch(
+        "services.processor.app.httpx.get",
+        side_effect=httpx.ConnectError("collector unavailable"),
+    ):
+        assert collector_is_ready() is False
+
+
+def test_readiness_reports_ready() -> None:
+    with patch("services.processor.app.httpx.get") as mock_get:
+        mock_get.return_value.raise_for_status.return_value = None
+        mock_get.return_value.text = "workshop_collector_up 1\n"
+
+        response = client.get("/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+
+
+def test_readiness_returns_service_unavailable() -> None:
+    with patch(
+        "services.processor.app.httpx.get",
+        side_effect=httpx.ConnectError("collector unavailable"),
+    ):
+        response = client.get("/ready")
+
+    assert response.status_code == 503
     assert response.json() == {
         "detail": "Collector metrics are unavailable",
     }

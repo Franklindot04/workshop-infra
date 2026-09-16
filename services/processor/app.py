@@ -2,7 +2,7 @@ import os
 import re
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import PlainTextResponse
 
 app = FastAPI(title="workshop-infra processor")
@@ -63,6 +63,26 @@ def collector_status() -> dict[str, float | str]:
         "collector": "up" if value == 1 else "down",
         "value": value,
     }
+
+
+def collector_is_ready() -> bool:
+    try:
+        fetch_collector_metrics()
+    except HTTPException:
+        return False
+
+    return True
+
+
+@app.get("/ready", status_code=status.HTTP_200_OK)
+def readiness() -> dict[str, str]:
+    if not collector_is_ready():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Collector metrics are unavailable",
+        )
+
+    return {"status": "ready"}
 
 
 def server_port() -> int:
